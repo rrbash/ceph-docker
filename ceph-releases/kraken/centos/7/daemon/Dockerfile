@@ -15,6 +15,7 @@ RUN yum install -y unzip
 RUN rpm --import 'https://download.ceph.com/keys/release.asc'
 RUN rpm -Uvh http://download.ceph.com/rpm-${CEPH_VERSION}/el7/noarch/ceph-release-1-1.el7.noarch.rpm
 RUN yum install -y epel-release && yum clean all
+RUN curl -L https://shaman.ceph.com/api/repos/nfs-ganesha/next/latest/centos/7/repo > /etc/yum.repos.d/nfs-ganesha.repo
 ARG PACKAGES="ceph-mon ceph-osd ceph-mds ceph-mgr ceph-base ceph-common ceph-radosgw rbd-mirror nfs-ganesha-rgw nfs-ganesha-vfs nfs-ganesha-ceph device-mapper sharutils etcd kubernetes-client"
 RUN yum install -y $PACKAGES && rpm -qv $PACKAGES && yum clean all
 
