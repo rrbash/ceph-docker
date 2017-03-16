@@ -19,7 +19,9 @@ function osd_disk_prepare {
   timeout 10 ceph ${CLI_OPTS} --name client.bootstrap-osd --keyring $OSD_BOOTSTRAP_KEYRING health || exit 1
 
   # check device status first
-  if ! parted --script ${OSD_DEVICE} print > /dev/null 2>&1; then
+  parted_out=$(parted --script ${OSD_DEVICE} print 2>&1)
+  if [ $? -ne 0 ]; then
+    log "Parted failed on ${OSD_DEVICE} with $parted_out"
     if [[ ${OSD_FORCE_ZAP} -eq 1 ]]; then
       log "It looks like ${OSD_DEVICE} isn't consistent, however OSD_FORCE_ZAP is enabled so we are zapping the device anyway"
       ceph-disk -v zap ${OSD_DEVICE}
