@@ -2,6 +2,14 @@
 
 set -ex
 
+function trap_vagrant_error {
+  echo "An error got detected"
+  for vm in $(cat $CEPH_ANSIBLE_SCENARIO_PATH/hosts | grep -v "^\["); do
+      echo "Collecting log on $vm"
+      vagrant ssh $vm -c 'echo "Checking $(hostname)"; cat /proc/partitions; rpm -qa | grep ceph'
+  done
+}
+
 # Proxy script from tox. This is an intermediate script so that we can setup
 # the environment properly then call ceph-ansible for testing, and finally tear
 # down, while keeping tox features of simplicity and combinatorial confgiruation.
@@ -62,6 +70,9 @@ docker --debug push localhost:5000/ceph/daemon
 cd "$CEPH_ANSIBLE_SCENARIO_PATH"
 vagrant up --no-provision --provider=$VAGRANT_PROVIDER
 
+set -E
+trap 'trap_vagrant_error' ERR
+
 bash $TOXINIDIR/ceph-ansible/tests/scripts/generate_ssh_config.sh $CEPH_ANSIBLE_SCENARIO_PATH
 
 export ANSIBLE_SSH_ARGS="-F $CEPH_ANSIBLE_SCENARIO_PATH/vagrant_ssh_config"
@@ -77,6 +88,7 @@ testinfra -n 4 --sudo -v --connection=ansible --ansible-inventory=$CEPH_ANSIBLE_
 
 # teardown
 #################################################################################
+trap ERR
 cd $CEPH_ANSIBLE_SCENARIO_PATH
 vagrant destroy --force
 cd $WORKSPACE
